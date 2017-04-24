@@ -154,5 +154,5 @@ object Example {
    * Hint: Starting with Reader.sequence will be important.
    */
   def indirect(name: String): Reader[Config, List[String]] =
-  ???
+    ???
 }

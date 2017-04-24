@@ -22,7 +22,7 @@ case class Writer[W, A](log: W, value: A) {
    *
    */
   def map[B](f: A => B): Writer[W, B] =
-    ???
+    Writer(log, f(value))
 
   /*
    * Exercise 3.2:
@@ -34,7 +34,7 @@ case class Writer[W, A](log: W, value: A) {
    *
    */
   def flatMap[B](f: A => Writer[W, B])(implicit M: Monoid[W]): Writer[W, B] =
-    ???
+    f(value).copy(log = Monoid[W].append(this.log, f(value).log))
 }
 
 object Writer {
@@ -47,7 +47,7 @@ object Writer {
    * Hint: Try using Writer constructor.
    */
   def value[W: Monoid, A](a: A): Writer[W, A] =
-    ???
+    Writer(Monoid[W].zero, a)
 
   /*
    * Exercise 3.4:
@@ -58,16 +58,16 @@ object Writer {
    *
    * Hint: Try using Writer constructor.
    */
-  def tell[W](w: W): Writer[W, Unit] =
-    ???
+  def tell[W: Monoid](w: W): Writer[W, Unit] =
+    Writer(w, ())
 
   /*
    * Exercise 3.5:
    *
-   * Sequence, a list of Readers, to a Reader of Lists.
+   * Sequence, a list of Writers, to a Writer of Lists.
    */
   def sequence[W: Monoid, A](writers: List[Writer[W, A]]): Writer[W, List[A]] =
-    ???
+    Writer(writers.foldLeft(Monoid[W].zero)((log, writer) => Monoid[W].append(log, writer.log)), writers.map(_.value))
 
   class Writer_[W] {
     type l[a] = Writer[W, a]
@@ -82,7 +82,7 @@ object Writer {
   implicit def WriterEqual[W: Equal, A: Equal] =
     Equal.from[Writer[W, A]]((a, b) => (a.log -> a.value) === (b.log -> b.value))
 
-  implicit def WriterMoniod[W: Monoid, A: Monoid]: Monoid[Writer[W, A]] =
+  implicit def WriterMonoid[W: Monoid, A: Monoid]: Monoid[Writer[W, A]] =
     new Monoid[Writer[W, A]] {
       def zero = Writer.value[W, A](Monoid[A].zero)
       def append(l: Writer[W, A], r: => Writer[W, A]) =
@@ -119,7 +119,13 @@ object Example {
    * Hint: Writer(W, A) and Writer.sequence will be useful here.
    */
   def stocks(data: List[Stock]): (Stats, List[Stock]) =
-    ???
+    Writer.sequence(
+      data.map { d =>
+        Writer(
+          Stats(d.cents, d.cents, d.cents, 1),
+          Stock(d.ticker, d.date, if (d.cents < 10000) d.cents + 1000 else d.cents + 10)
+        )
+    }).run
 
   /**
    * A monoid for Stats.
@@ -127,9 +133,9 @@ object Example {
   implicit def StatsMonoid: Monoid[Stats] =
     new Monoid[Stats] {
       def zero =
-        ???
+        Stats(Int.MinValue, Int.MaxValue, 0, 0)
       def append(l: Stats, r: => Stats) =
-        ???
+        Stats(math.min(l.min, r.min), math.max(l.max, r.max), l.total + r.total, l.count + r.count)
     }
 
   def exampledata = List(

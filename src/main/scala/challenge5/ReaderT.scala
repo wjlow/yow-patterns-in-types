@@ -19,7 +19,9 @@ case class ReaderT[M[_], R, A](run: R => M[A]) {
    *
    */
   def map[B](f: A => B)(implicit M: Monad[M]): ReaderT[M, R, B] =
-    ???
+  ReaderT {
+    r => M.map(run(r))(f)
+  }
 
   /*
    * Exercise 5.2:
@@ -31,7 +33,9 @@ case class ReaderT[M[_], R, A](run: R => M[A]) {
    *
    */
   def flatMap[B](f: A => ReaderT[M, R, B])(implicit M: Monad[M]): ReaderT[M, R, B] =
-    ???
+  ReaderT {
+    r => M.bind(run(r))(a => f(a).run(r))
+  }
 }
 
 object ReaderT {
