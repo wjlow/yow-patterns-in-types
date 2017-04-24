@@ -20,7 +20,9 @@ case class Reader[R, A](run: R => A) {
    * Two readers are equal if for all inputs, the same result is produced.
    */
   def map[B](f: A => B): Reader[R, B] =
-    ???
+    Reader {
+      r => f(run(r))
+    }
 
   /*
    * Exercise 2.2:
@@ -33,7 +35,10 @@ case class Reader[R, A](run: R => A) {
    * Two readers are equal if for all inputs, the same result is produced.
    */
   def flatMap[B](f: A => Reader[R, B]): Reader[R, B] =
-    ???
+    Reader {
+      r => f(run(r)).run(r)
+    }
+
 }
 
 object Reader {
@@ -45,7 +50,9 @@ object Reader {
    * Hint: Try using Reader constructor.
    */
   def value[R, A](a: => A): Reader[R, A] =
-    ???
+    Reader {
+      _ => a
+    }
 
   /*
    * Exercise 2.4:
@@ -57,7 +64,9 @@ object Reader {
    * Hint: Try using Reader constructor.
    */
   def ask[R]: Reader[R, R] =
-    ???
+    Reader {
+      r => r
+    }
 
   /*
    * Exercise 2.5:
@@ -69,7 +78,9 @@ object Reader {
    * Hint: Try using Reader constructor.
    */
   def local[R, A](f: R => R)(reader: Reader[R, A]): Reader[R, A] =
-    ???
+    Reader {
+      r => reader.run(f(r))
+    }
 
   /*
    * Exercise 2.6:
@@ -77,7 +88,9 @@ object Reader {
    * Sequence, a list of Readers, to a Reader of Lists.
    */
   def sequence[R, A](readers: List[Reader[R, A]]): Reader[R, List[A]] =
-    ???
+    Reader {
+      r => readers.map(_.run(r))
+    }
 
   implicit def ReaderMonoid[R, A: Monoid]: Monoid[Reader[R, A]] =
     new Monoid[Reader[R, A]] {
@@ -128,7 +141,7 @@ object Example {
    * Hint: Starting with Reader.ask will help.
    */
   def direct(name: String): Reader[Config, List[String]] =
-    ???
+    Reader.ask[Config].map(c => c.data.find(_.name == name).map(_.values).getOrElse(Nil))
 
   /*
    * For a single name, lookup all of the indirect values, that
@@ -141,5 +154,5 @@ object Example {
    * Hint: Starting with Reader.sequence will be important.
    */
   def indirect(name: String): Reader[Config, List[String]] =
-    ???
+  ???
 }
