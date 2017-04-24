@@ -47,7 +47,7 @@ object WriterT {
    *
    */
   def writer[M[_]: Monad, W, A](a: A)(w: W): WriterT[M, W, A] =
-    ???
+    WriterT(Monad[M].pure((w, a)))
 
   /*
    * Exercise 6.4:
@@ -56,7 +56,7 @@ object WriterT {
    * Monoid for W.
    */
   def value[M[_]: Monad, W: Monoid, A](a: => A): WriterT[M, W, A] =
-    ???
+    writer(a)(Monoid[W].zero)
 
   /*
    * Exercise 6.5:
@@ -66,7 +66,7 @@ object WriterT {
    * Tell appends the writer content w and produces no value.
    */
   def tell[M[_]: Monad, W](w: W): WriterT[M, W, Unit] =
-    ???
+    WriterT(Monad[M].pure((w, ())))
 
 
   class WriterT_[M[_], W] {
@@ -93,6 +93,9 @@ object WriterT {
    *
    * Hint: Try using WriterT constructor and Monad[M].map(ga).
    */
-  implicit def WriterTMonadTrans[W:Monoid]: MonadTrans[WriterT__[W]#l] =
-    ???
+  implicit def WriterTMonadTrans[W:Monoid]: MonadTrans[WriterT__[W]#l] = {
+    def liftM[M[_]: Monad, A](ga: M[A]): WriterT[M, W, A] =
+      WriterT(Monad[M].map(ga)(a => (Monoid[W].zero, a)))
+  }
+
 }
